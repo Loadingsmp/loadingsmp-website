@@ -14,7 +14,6 @@ const __dirname = path.dirname(__filename);
 const DATA_DIR = path.join(__dirname, "data");
 const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
 
-// CORS + preflight
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
@@ -28,6 +27,7 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 function ensureDataFile() {
   if (!fs.existsSync(DATA_DIR)) {
@@ -150,8 +150,8 @@ app.get("/api/orders", requireAdmin, (req, res) => {
 
 app.patch("/api/orders/:orderCode", requireAdmin, (req, res) => {
   try {
-    const { orderCode } = req.params;
-    const { status } = req.body;
+    const orderCode = req.params.orderCode;
+    const status = req.body.status;
 
     const allowedStatuses = ["Pending", "Paid", "Completed", "Cancelled"];
 
