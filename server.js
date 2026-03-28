@@ -1,5 +1,4 @@
 import express from "express";
-import cors from "cors";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -8,15 +7,18 @@ const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 const MINECRAFT_SERVER_ADDRESS =
   process.env.MINECRAFT_SERVER_ADDRESS || "loadinghsmpp.falix.dev";
 
-app.use(
-  cors({
-    origin: "*",
-    methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type"],
-  })
-);
+// CORS + preflight fix
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
 
-app.options(/.*/, cors());
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
 
 app.use(express.json());
 
