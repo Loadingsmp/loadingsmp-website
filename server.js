@@ -10,10 +10,13 @@ const MINECRAFT_SERVER_ADDRESS =
 
 app.use(
   cors({
-    origin: true,
-    credentials: false,
+    origin: "*",
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type"],
   })
 );
+
+app.options(/.*/, cors());
 
 app.use(express.json());
 
