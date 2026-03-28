@@ -35,6 +35,7 @@ const CheckoutModal = ({
   item,
   username,
   skinUrl,
+  onPurchaseComplete,
 }: Props) => {
   const [email, setEmail] = useState("");
   const [discordUsername, setDiscordUsername] = useState("");
@@ -73,20 +74,19 @@ const CheckoutModal = ({
     setRequestError("");
 
     try {
+      const body = new URLSearchParams({
+        username,
+        email,
+        discordUsername,
+        paymentMethod,
+        itemName: item.name,
+        price: item.price,
+        description: item.description || "No description provided.",
+      });
+
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/create-order`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username,
-          email,
-          discordUsername,
-          paymentMethod,
-          itemName: item.name,
-          price: item.price,
-          description: item.description || "No description provided.",
-        }),
+        body,
       });
 
       const data = await response.json();
@@ -97,6 +97,7 @@ const CheckoutModal = ({
 
       setOrderCode(data.orderCode);
       setOrderCreated(true);
+      onPurchaseComplete(username, item.name);
     } catch (error) {
       console.error(error);
       setRequestError("Something went wrong while creating your order. Please try again.");
