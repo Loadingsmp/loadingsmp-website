@@ -3,11 +3,12 @@ import express from "express";
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
+const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
+const DISCORD_LOG_CHANNEL_ID = process.env.DISCORD_LOG_CHANNEL_ID;
 const MINECRAFT_SERVER_ADDRESS =
   process.env.MINECRAFT_SERVER_ADDRESS || "loadinghsmpp.falix.dev";
 
-// CORS + preflight fix
+// CORS + preflight
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -35,9 +36,9 @@ app.get("/", (req, res) => {
 
 app.post("/api/create-order", async (req, res) => {
   try {
-    if (!DISCORD_WEBHOOK_URL) {
+    if (!DISCORD_BOT_TOKEN || !DISCORD_LOG_CHANNEL_ID) {
       return res.status(500).json({
-        error: "Discord webhook is not configured on the server.",
+        error: "Discord bot token or log channel ID is not configured.",
       });
     }
 
@@ -77,10 +78,10 @@ app.post("/api/create-order", async (req, res) => {
 
     const safeDescription =
       typeof description === "string" && description.trim()
-        ? description.slice(0, 1000)
+        ? description.slice(0, 4000)
         : "No description provided.";
 
-    const webhookPayload = {
+    const discordPayload = {
       embeds: [
         {
           title: "New Store Order",
@@ -108,19 +109,26 @@ app.post("/api/create-order", async (req, res) => {
       ],
     };
 
-    const discordResponse = await fetch(DISCORD_WEBHOOK_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(webhookPayload),
-    });
+    const discordResponse = await fetch(
+      `https://discord.com/api/v10/channels/${DISCORD_LOG_CHANNEL_ID}/messages`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+        },
+        body: JSON.stringify(discordPayload),
+      }
+    );
+
+    const discordText = await discordResponse.text();
+    console.log("Discord API status:", discordResponse.status);
+    console.log("Discord API response:", discordText);
 
     if (!discordResponse.ok) {
-      const text = await discordResponse.text();
       return res.status(500).json({
-        error: "Failed to send Discord webhook.",
-        details: text,
+        error: "Failed to send Discord bot message.",
+        details: discordText,
       });
     }
 
